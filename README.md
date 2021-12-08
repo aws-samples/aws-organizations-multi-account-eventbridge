@@ -152,3 +152,12 @@ From your local machine, run the following command to clean all the resources cr
 ```
 npx cdk destroy
 ```
+
+## Security
+
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+
+## License
+
+This library is licensed under the MIT-0 License. See the LICENSE file.
+
