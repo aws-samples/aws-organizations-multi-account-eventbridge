@@ -1,0 +1,35 @@
+{
+  "name": "aws-organizations-event-bridge-setup",
+  "version": "0.1.0",
+  "bin": {
+    "aws-organizations-event-bridge-setup": "bin/aws-organizations-event-bridge-setup.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/node": "^10.17.27",
+    "aws-cdk": "^1.125.0",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.4.2"
+  },
+  "dependencies": {
+    "@aws-cdk/aws-cloudformation": "^1.128.0",
+    "@aws-cdk/aws-cloudtrail": "^1.128.0",
+    "@aws-cdk/aws-cloudwatch": "^1.128.0",
+    "@aws-cdk/aws-events": "^1.125.0",
+    "@aws-cdk/aws-events-targets": "^1.128.0",
+    "@aws-cdk/aws-iam": "^1.125.0",
+    "@aws-cdk/aws-lambda": "^1.125.0",
+    "@aws-cdk/aws-logs": "^1.128.0",
+    "@aws-cdk/aws-s3": "^1.128.0",
+    "@aws-cdk/aws-sns": "^1.128.0",
+    "@aws-cdk/core": "^1.125.0",
+    "@aws-cdk/custom-resources": "^1.128.0",
+    "aws-sdk": "^2.1007.0",
+    "cdk-nag": "^0.1.37",
+    "source-map-support": "^0.5.16"
+  }
+}

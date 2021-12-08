@@ -1,0 +1,12 @@
+*.js
+!lambda-custom-resource.js
+!update-matching-rules-management.js
+!jest.config.js
+*.d.ts
+node_modules
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
+template.yml
