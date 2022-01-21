@@ -8,7 +8,7 @@ if [[ $# -ge 5 ]]; then
     export SNS_EMAIL=$5
     shift; shift; shift; shift; shift
 
-    npx cdk deploy "$@"
+    npx cdk synth "$@"
     exit $?
 else
     echo 1>&2 "Provide management account id, region, organization id, organization unit id and email as first five arguments."

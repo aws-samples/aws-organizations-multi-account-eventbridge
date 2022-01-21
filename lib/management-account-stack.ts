@@ -2,24 +2,48 @@ import * as cdk from '@aws-cdk/core';
 import { Code, Function, Runtime } from '@aws-cdk/aws-lambda';
 import { Effect, ManagedPolicy, PolicyDocument, PolicyStatement, Role, ServicePrincipal } from '@aws-cdk/aws-iam';
 import { Provider } from '@aws-cdk/custom-resources';
-import { RetentionDays } from '@aws-cdk/aws-logs';
-import { CfnCapabilities, CfnStackSet, CustomResource } from '@aws-cdk/core';
+import { CfnCapabilities, CfnStackSet, CustomResource, RemovalPolicy } from '@aws-cdk/core';
 import { Subscription, SubscriptionProtocol, Topic, TopicPolicy } from '@aws-cdk/aws-sns';
 import { AwsOrganizationsEventBridgeSetupMemberStack } from './member-account-stack';
 import { Trail } from '@aws-cdk/aws-cloudtrail';
 import { CfnEventBus, CfnEventBusPolicy, Rule } from '@aws-cdk/aws-events';
 import { LambdaFunction } from '@aws-cdk/aws-events-targets';
+import { StandardBucket } from './constructs/standard-bucket';
+import { Key } from '@aws-cdk/aws-kms';
+import { NagSuppressions } from 'cdk-nag';
 
 export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    const centralEventBridgeRuleName = 'CentralEventBridgeRule'
+    const centralEventBusName = 'CentralEventBus'
+
+    // allow stack to have resources which use the manage policy: LambdaBasicExecutionPolicy
+    NagSuppressions.addStackSuppressions(this, [
+      {
+        id: 'AwsSolutions-IAM4', reason: 'Managed policy only permits Lambda function to write to CloudWatch.'
+      }
+    ])
+
+    // block bucket public access for account.
+
+    // Q. compatibility with LZ Control Tower?
+    // allow customers to choose kms key (aws vs customer managed) - add as feature 
+    // block WPA by default - CDK or mention in documentation
+
     // Create new CloudTrail trail for management API Calls.
-    new Trail(this, 'ManagementAPITrail');
+    const trailBucket = new StandardBucket(this, 'TrailBucket', {
+      customerManagedEncryption: true, // customer can choose
+      disableAccessLogging: false
+    })
+    new Trail(this, 'ManagementAPITrail', {
+      bucket: trailBucket
+    });
 
     // Event Bus
     const eventBus = new CfnEventBus(this, 'CentralEventBus', {
-      name: 'CentralEventBus'
+      name: centralEventBusName
     });
     const eventBusPolicy = new CfnEventBusPolicy(this, 'EventBusPolicy', {
       eventBusName: eventBus.name,
@@ -38,6 +62,11 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
     // Create SNS topic and Email subscription.
     const topic = new Topic(this, 'SNSTopic', {
       topicName: 'EventBridgeTopic',
+      masterKey: new Key(this, 'SNSTopicKey', {
+        alias: 'SNSTopicKey',
+        removalPolicy: RemovalPolicy.RETAIN,
+        enableKeyRotation: true
+      })
     })
     const topicPolicy = new TopicPolicy(this, 'TopicPolicy', {
       topics: [topic],
@@ -68,7 +97,10 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
                 'events:removeTargets'
               ],
               effect: Effect.ALLOW,
-              resources: [`arn:aws:events:${this.region}:${this.account}:rule/*`]
+              resources: [
+                `arn:aws:events:${this.region}:${this.account}:rule/${centralEventBusName}/${centralEventBridgeRuleName}`,
+                `arn:aws:events:${this.region}:${this.account}:rule/${centralEventBridgeRuleName}`
+              ]
             }),
             new PolicyStatement({
               actions: [
@@ -81,7 +113,7 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
         })
       },
       managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
+        ManagedPolicy.fromManagedPolicyArn(this, 'LambdaBasic', 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole')
       ]
     })
 
@@ -89,13 +121,13 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
     const updateRuleFunction = new Function(this, 'UpdateMatchingRuleLambda', {
       runtime: Runtime.NODEJS_14_X,
       handler: 'update-matching-rules-management.handler',
-      logRetention: 1,
       timeout: cdk.Duration.minutes(10),
       environment: {
         REGION: process.env.REGION || '',
         ORGANIZATION_UNIT_ID: process.env.ORGANIZATION_UNIT_ID || '',
         SNS_TOPIC_ARN: topic.topicArn,
-        EVENT_BUS_NAME: eventBus.name
+        EVENT_BUS_NAME: eventBus.name,
+        CENTRAL_EVENT_BRIDGE_RULE_NAME: centralEventBridgeRuleName
       },
       role: updateMatchingruleLambdaRole,
       code: Code.fromAsset('lib/lambda'),
@@ -104,8 +136,8 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
     // configure custom resource based on Lambda.
     const customProviderUpdateMatchingRule = new Provider(this, 'UpdateMatchingRuleCustomProvider', {
       onEventHandler: updateRuleFunction,
-      logRetention: RetentionDays.ONE_DAY,
     })
+
     new CustomResource(this, 'UpdateMatchingRuleCustomResource', {
       serviceToken: customProviderUpdateMatchingRule.serviceToken
     })

@@ -76,7 +76,7 @@ npx cdk bootstrap  \
 To deploy the stacks, use the `cdk-deploy-to.sh` script and pass a comma separated list of account IDs which represent the member accounts, the management account ID, region, AWS Organization ID and an accessible email sddress.
 
 ```
-sh ./cdk-deploy-to.sh <MANAGEMENT ACCOUNT ID> <REGION> <AWS ORGANIZATION ID> <MEMBER ORGANIZATION UNIT ID> <EMAIL ADDRESS> AwsOrganizationsEventBridgeSetupManagementStack
+sh ./cdk-deploy-to.sh <MANAGEMENT ACCOUNT ID> <REGION> <AWS ORGANIZATION ID> <MEMBER ORGANIZATION UNIT ID> <EMAIL ADDRESS>
 ```
 
 Make sure to subscribe to the SNS Topic, when you receive an email after the Management stack is deployed.
