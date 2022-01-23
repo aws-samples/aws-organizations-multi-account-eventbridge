@@ -26,12 +26,6 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
       }
     ])
 
-    // block bucket public access for account.
-
-    // Q. compatibility with LZ Control Tower?
-    // allow customers to choose kms key (aws vs customer managed) - add as feature 
-    // block WPA by default - CDK or mention in documentation
-
     // Create new CloudTrail trail for management API Calls.
     const trailBucket = new StandardBucket(this, 'TrailBucket', {
       customerManagedEncryption: true, // customer can choose
@@ -59,14 +53,26 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
     eventBusPolicy.addDependsOn(eventBus);
 
 
+    const snsTopicEncryptionKey = new Key(this, 'SNSTopicKey', {
+      removalPolicy: RemovalPolicy.RETAIN,
+      enableKeyRotation: true
+    });
+    snsTopicEncryptionKey.addToResourcePolicy(new PolicyStatement({
+      actions: [
+        'kms:Decrypt',
+        'kms:GenerateDataKey*'
+      ],
+      effect: Effect.ALLOW,
+      resources: [
+        '*'
+      ],
+      principals: [new ServicePrincipal('events.amazonaws.com')],
+    }))
+
     // Create SNS topic and Email subscription.
     const topic = new Topic(this, 'SNSTopic', {
       topicName: 'EventBridgeTopic',
-      masterKey: new Key(this, 'SNSTopicKey', {
-        alias: 'SNSTopicKey',
-        removalPolicy: RemovalPolicy.RETAIN,
-        enableKeyRotation: true
-      })
+      masterKey: snsTopicEncryptionKey
     })
     const topicPolicy = new TopicPolicy(this, 'TopicPolicy', {
       topics: [topic],
