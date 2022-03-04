@@ -12,6 +12,13 @@ import { StandardBucket } from './constructs/standard-bucket';
 import { Key } from '@aws-cdk/aws-kms';
 import { NagSuppressions } from 'cdk-nag';
 
+type Template = {
+  Parameters: any
+  Resources: any
+  Conditions?: any
+  Rules?: any
+}
+
 export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -40,7 +47,7 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
       name: centralEventBusName
     });
     const eventBusPolicy = new CfnEventBusPolicy(this, 'EventBusPolicy', {
-      eventBusName: eventBus.name,
+      eventBusName: centralEventBusName,
       statementId: 'AllowPutEventsWithinOrganizationAccounts',
       action: 'events:PutEvents',
       principal: '*',
@@ -132,7 +139,7 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
         REGION: process.env.REGION || '',
         ORGANIZATION_UNIT_ID: process.env.ORGANIZATION_UNIT_ID || '',
         SNS_TOPIC_ARN: topic.topicArn,
-        EVENT_BUS_NAME: eventBus.name,
+        EVENT_BUS_NAME: centralEventBusName,
         CENTRAL_EVENT_BRIDGE_RULE_NAME: centralEventBridgeRuleName
       },
       role: updateMatchingruleLambdaRole,
@@ -173,6 +180,8 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
     new AwsOrganizationsEventBridgeSetupMemberStack(stage, 'MemberEventBridgeStack')
     const stackSetTemplateObj = stage.synth().stacks[0].template
 
+    const template = this.stripCDKComponents(stackSetTemplateObj)
+
     new CfnStackSet(this, 'MemberStackSet', {
       autoDeployment: {
         enabled: true,
@@ -180,12 +189,12 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
       },
       stackSetName: 'MemberStackEventBridgeSetup',
       capabilities: [CfnCapabilities.NAMED_IAM],
-      templateBody: JSON.stringify(stackSetTemplateObj),
+      templateBody: JSON.stringify(template),
       permissionModel: 'SERVICE_MANAGED',
       parameters: [
         {
           parameterKey: 'eventBusName',
-          parameterValue: eventBus.name
+          parameterValue: centralEventBusName
         }
       ],
       operationPreferences: {
@@ -200,5 +209,14 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
         }
       ]
     })
+  }
+
+  stripCDKComponents = (template: Template): Template => {
+    delete template.Parameters.BootstrapVersion
+    delete template.Resources.CDKMetadata
+    delete template.Conditions
+    delete template.Rules
+
+    return template
   }
 }
