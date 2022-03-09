@@ -153,6 +153,9 @@ From your local machine, run the following command to clean all the resources cr
 npx cdk destroy
 ```
 
+## Shared Responsibility 
+The customer is responsible to enforce MFA, password policies and the integration of third-party indentity services within their AWS Organization. The customer is responsible for enforcing AWS Config rules to audit and monitor AWS Resources. Read the [Shared Responsibility Model](https://aws.amazon.com/compliance/shared-responsibility-model/?nc1=h_ls) for more information.
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.

@@ -11,6 +11,7 @@ import { LambdaFunction } from '@aws-cdk/aws-events-targets';
 import { StandardBucket } from './constructs/standard-bucket';
 import { Key } from '@aws-cdk/aws-kms';
 import { NagSuppressions } from 'cdk-nag';
+import { RetentionDays } from '@aws-cdk/aws-logs';
 
 type Template = {
   Parameters: any
@@ -26,10 +27,12 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
     const centralEventBridgeRuleName = 'CentralEventBridgeRule'
     const centralEventBusName = 'CentralEventBus'
 
-    // allow stack to have resources which use the manage policy: LambdaBasicExecutionPolicy
     NagSuppressions.addStackSuppressions(this, [
       {
         id: 'AwsSolutions-IAM4', reason: 'Managed policy only permits Lambda function to write to CloudWatch.'
+      },
+      {
+        id: 'AwsSolutions-IAM5', reason: 'Lambda role required to allow setting log retention to the CloudWatch Log Groups created among Lambda execution'
       }
     ])
 
@@ -39,7 +42,8 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
       disableAccessLogging: false
     })
     new Trail(this, 'ManagementAPITrail', {
-      bucket: trailBucket
+      bucket: trailBucket,
+      encryptionKey: trailBucket.encryptionKey
     });
 
     // Event Bus
@@ -144,6 +148,7 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
       },
       role: updateMatchingruleLambdaRole,
       code: Code.fromAsset('lib/lambda'),
+      logRetention: RetentionDays.ONE_MONTH
     })
 
     // configure custom resource based on Lambda.

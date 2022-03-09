@@ -1,5 +1,5 @@
 import * as cdk from '@aws-cdk/core';
-import { EventBus, IRule, Rule, RuleTargetConfig } from '@aws-cdk/aws-events';
+import { IRule, Rule, RuleTargetConfig } from '@aws-cdk/aws-events';
 import { Effect, PolicyStatement, Role, ServicePrincipal } from '@aws-cdk/aws-iam';
 import { ComparisonOperator, Metric, Statistic } from '@aws-cdk/aws-cloudwatch';
 import { CfnParameter } from '@aws-cdk/core';

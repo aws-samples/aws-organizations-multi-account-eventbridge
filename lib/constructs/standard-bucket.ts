@@ -1,7 +1,7 @@
 import { Construct, RemovalPolicy } from '@aws-cdk/core'
 import { Key } from '@aws-cdk/aws-kms'
 import { Bucket, BucketProps, BucketEncryption, IBucket, BlockPublicAccess } from '@aws-cdk/aws-s3'
-import { AnyPrincipal, Effect, PolicyStatement } from '@aws-cdk/aws-iam'
+import { AccountRootPrincipal, AnyPrincipal, Effect, PolicyDocument, PolicyStatement, ServicePrincipal } from '@aws-cdk/aws-iam'
 import { NagSuppressions } from 'cdk-nag'
 
 export interface StandardBucketProps extends BucketProps {
@@ -19,7 +19,32 @@ export class StandardBucket extends Bucket implements IBucket {
       config.encryptionKey = new Key(scope, `${id}Key`, {
         alias: id,
         removalPolicy: RemovalPolicy.RETAIN,
-        enableKeyRotation: true
+        enableKeyRotation: true,
+        policy: new PolicyDocument({
+          statements: [
+            new PolicyStatement({
+              actions: [
+                'kms:GenerateDataKey',
+                'kms:DescribeKey'
+              ],
+              effect: Effect.ALLOW,
+              principals: [
+                new ServicePrincipal('cloudtrail.amazonaws.com')
+              ],
+              resources: ['*']
+            }),
+            new PolicyStatement({
+              effect: Effect.ALLOW,
+              actions: [
+                'kms:*'
+              ],
+              resources: ['*'],
+              principals: [
+                new AccountRootPrincipal()
+              ]
+            })
+          ]
+        })
       })
     } else {
       config.encryption = BucketEncryption.S3_MANAGED
