@@ -39,9 +39,8 @@ In each member AWS Accounts, three Amazon EventBridge rules are created respecti
 ## Prerequisites
 1.	At least one [AWS accounts](https://signin.aws.amazon.com/signin?redirect_uri=https%3A%2F%2Fportal.aws.amazon.com%2Fbilling%2Fsignup%2Fresume&client_id=signup) which represents the member's account. Alternative other member accounts can be added.
 2.	An [AWS account](https://signin.aws.amazon.com/signin?redirect_uri=https%3A%2F%2Fportal.aws.amazon.com%2Fbilling%2Fsignup%2Fresume&client_id=signup)  which is the management account.
-3.	An accessible email address.
-4.	Install [AWS Command Line (CLI)](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html).
-5.	Install [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html#getting_started_install).
+3.	Install [AWS Command Line (CLI)](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html).
+4.	Install [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html#getting_started_install).
 
 ## Setup
 
