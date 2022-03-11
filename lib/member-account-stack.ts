@@ -30,7 +30,7 @@ export class AwsOrganizationsEventBridgeSetupMemberStack extends cdk.Stack {
       name: 'MemberEventBridgeRule',
       sources: ['aws.cloudwatch', 'aws.config', 'aws.guardduty'],
       description: 'The Rule propagates all Amazon CloudWatch Events, AWS Config Events, AWS Guardduty Events to the management account'
-    }
+    };
 
     const cdkRule = new Rule(this, rule.name, {
       description: rule.description,
@@ -54,13 +54,13 @@ export class AwsOrganizationsEventBridgeSetupMemberStack extends cdk.Stack {
       namespace: 'AWS/Billing',
       metricName: 'EstimatedCharges',
       statistic: Statistic.MAXIMUM,
-    })
+    });
     metric.createAlarm(this, 'Alarm', {
       alarmName: 'BillingAlarm',
       threshold: 10,
       evaluationPeriods: 5,
       comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       actionsEnabled: false
-    })
+    });
   }
 }

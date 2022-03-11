@@ -24,8 +24,8 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const centralEventBridgeRuleName = 'CentralEventBridgeRule'
-    const centralEventBusName = 'CentralEventBus'
+    const centralEventBridgeRuleName = 'CentralEventBridgeRule';
+    const centralEventBusName = 'CentralEventBus';
 
     NagSuppressions.addStackSuppressions(this, [
       {
@@ -34,13 +34,13 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
       {
         id: 'AwsSolutions-IAM5', reason: 'Lambda role required to allow setting log retention to the CloudWatch Log Groups created among Lambda execution'
       }
-    ])
+    ]);
 
     // Create new CloudTrail trail for management API Calls.
     const trailBucket = new StandardBucket(this, 'TrailBucket', {
       customerManagedEncryption: true, // customer can choose
       disableAccessLogging: false
-    })
+    });
     new Trail(this, 'ManagementAPITrail', {
       bucket: trailBucket,
       encryptionKey: trailBucket.encryptionKey
@@ -60,7 +60,7 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
         type: 'StringEquals',
         value: process.env.ORGANIZATION_ID
       }
-    })
+    });
     eventBusPolicy.addDependsOn(eventBus);
 
 
@@ -78,13 +78,13 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
         '*'
       ],
       principals: [new ServicePrincipal('events.amazonaws.com')],
-    }))
+    }));
 
     // Create SNS topic and Email subscription.
     const topic = new Topic(this, 'SNSTopic', {
       topicName: 'EventBridgeTopic',
       masterKey: snsTopicEncryptionKey
-    })
+    });
     const topicPolicy = new TopicPolicy(this, 'TopicPolicy', {
       topics: [topic],
     });
@@ -97,7 +97,7 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
       topic: topic,
       endpoint: process.env.SNS_EMAIL || '',
       protocol: SubscriptionProtocol.EMAIL
-    })
+    });
 
     // Create Lambda function role with permissions to list organization members and update event rules.
     const updateMatchingruleLambdaRole = new Role(this, 'UpdateMatchingruleLambdaRole', {
@@ -132,7 +132,7 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
       managedPolicies: [
         ManagedPolicy.fromManagedPolicyArn(this, 'LambdaBasic', 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole')
       ]
-    })
+    });
 
     // Create Lambda function which creates EventBridge Rule with all member accounts.
     const updateRuleFunction = new Function(this, 'UpdateMatchingRuleLambda', {
@@ -149,16 +149,16 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
       role: updateMatchingruleLambdaRole,
       code: Code.fromAsset('lib/lambda'),
       logRetention: RetentionDays.ONE_MONTH
-    })
+    });
 
     // configure custom resource based on Lambda.
     const customProviderUpdateMatchingRule = new Provider(this, 'UpdateMatchingRuleCustomProvider', {
       onEventHandler: updateRuleFunction,
-    })
+    });
 
     new CustomResource(this, 'UpdateMatchingRuleCustomResource', {
       serviceToken: customProviderUpdateMatchingRule.serviceToken
-    })
+    });
 
     // EventBridge to trigger updateRuleFunction Lambda whenever a new account is added or removed from the organization.
     new Rule(this, 'AWSOrganizationAccountMemberChangesRule', {
@@ -181,11 +181,11 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
     });
 
     // StackSet in the management account used to create and deploy the member stack in each member account.
-    const stage = new cdk.Stage(this, "Stage")
-    new AwsOrganizationsEventBridgeSetupMemberStack(stage, 'MemberEventBridgeStack')
-    const stackSetTemplateObj = stage.synth().stacks[0].template
+    const stage = new cdk.Stage(this, "Stage");
+    new AwsOrganizationsEventBridgeSetupMemberStack(stage, 'MemberEventBridgeStack');
+    const stackSetTemplateObj = stage.synth().stacks[0].template;
 
-    const template = this.stripCDKComponents(stackSetTemplateObj)
+    const template = this.stripCDKComponents(stackSetTemplateObj);
 
     new CfnStackSet(this, 'MemberStackSet', {
       autoDeployment: {
@@ -213,15 +213,15 @@ export class AwsOrganizationsEventBridgeSetupManagementStack extends cdk.Stack {
           regions: [process.env.REGION || '']
         }
       ]
-    })
+    });
   }
 
   stripCDKComponents = (template: Template): Template => {
-    delete template.Parameters.BootstrapVersion
-    delete template.Resources.CDKMetadata
-    delete template.Conditions
-    delete template.Rules
+    delete template.Parameters.BootstrapVersion;
+    delete template.Resources.CDKMetadata;
+    delete template.Conditions;
+    delete template.Rules;
 
-    return template
-  }
+    return template;
+  };
 }

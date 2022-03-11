@@ -8,9 +8,9 @@ const app = new cdk.App();
 
 // management stack
 new AwsOrganizationsEventBridgeSetupManagementStack(app, 'AwsOrganizationsEventBridgeSetupManagementStack',
-{
-  env: { account: process.env.CDK_MANAGEMENT_ACCOUNT, region: process.env.REGION },
-});
+  {
+    env: { account: process.env.CDK_MANAGEMENT_ACCOUNT, region: process.env.REGION },
+  });
 
 cdk.Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
 
