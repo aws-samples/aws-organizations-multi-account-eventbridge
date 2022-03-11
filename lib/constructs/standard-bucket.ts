@@ -1,8 +1,8 @@
-import { Construct, RemovalPolicy } from '@aws-cdk/core'
-import { Key } from '@aws-cdk/aws-kms'
-import { Bucket, BucketProps, BucketEncryption, IBucket, BlockPublicAccess } from '@aws-cdk/aws-s3'
-import { AccountRootPrincipal, AnyPrincipal, Effect, PolicyDocument, PolicyStatement, ServicePrincipal } from '@aws-cdk/aws-iam'
-import { NagSuppressions } from 'cdk-nag'
+import { Construct, RemovalPolicy } from '@aws-cdk/core';
+import { Key } from '@aws-cdk/aws-kms';
+import { Bucket, BucketProps, BucketEncryption, IBucket, BlockPublicAccess } from '@aws-cdk/aws-s3';
+import { AccountRootPrincipal, AnyPrincipal, Effect, PolicyDocument, PolicyStatement, ServicePrincipal } from '@aws-cdk/aws-iam';
+import { NagSuppressions } from 'cdk-nag';
 
 export interface StandardBucketProps extends BucketProps {
   customerManagedEncryption: boolean;
@@ -11,11 +11,11 @@ export interface StandardBucketProps extends BucketProps {
 
 export class StandardBucket extends Bucket implements IBucket {
   constructor(scope: Construct, id: string, props?: StandardBucketProps) {
-    const config = { ...props }
+    const config = { ...props };
 
     // encryption
     if (config.customerManagedEncryption) {
-      config.encryption = BucketEncryption.KMS
+      config.encryption = BucketEncryption.KMS;
       config.encryptionKey = new Key(scope, `${id}Key`, {
         alias: id,
         removalPolicy: RemovalPolicy.RETAIN,
@@ -45,9 +45,9 @@ export class StandardBucket extends Bucket implements IBucket {
             })
           ]
         })
-      })
+      });
     } else {
-      config.encryption = BucketEncryption.S3_MANAGED
+      config.encryption = BucketEncryption.S3_MANAGED;
     }
 
     // enable access logging
@@ -57,22 +57,22 @@ export class StandardBucket extends Bucket implements IBucket {
         customerManagedEncryption: false,
         disableAccessLogging: true,
         encryptionKey: undefined
-      })
+      });
 
       NagSuppressions.addResourceSuppressions(config.serverAccessLogsBucket, [
         {
           id: 'AwsSolutions-S1', reason: 'The server access log bucket cannot have its own server access log bucket'
         }
-      ])
+      ]);
     }
 
 
-    config.removalPolicy = config.removalPolicy ?? RemovalPolicy.RETAIN
-    config.versioned = false
-    config.publicReadAccess = false
-    config.blockPublicAccess = BlockPublicAccess.BLOCK_ALL
+    config.removalPolicy = config.removalPolicy ?? RemovalPolicy.RETAIN;
+    config.versioned = false;
+    config.publicReadAccess = false;
+    config.blockPublicAccess = BlockPublicAccess.BLOCK_ALL;
 
-    super(scope, id, config as BucketProps)
+    super(scope, id, config as BucketProps);
     this.addToResourcePolicy(new PolicyStatement({
       actions: [
         's3:*'
@@ -90,6 +90,6 @@ export class StandardBucket extends Bucket implements IBucket {
       principals: [
         new AnyPrincipal()
       ]
-    }))
+    }));
   }
 }
